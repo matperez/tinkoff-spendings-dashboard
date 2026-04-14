@@ -5,6 +5,7 @@ import * as React from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -24,6 +25,7 @@ export function FiltersBar(props: {
 }) {
   const { filters, onChange } = props;
   const [categoriesExpanded, setCategoriesExpanded] = React.useState(false);
+  const [logScale, setLogScale] = React.useState(true);
 
   const setType = (t: OpType) => onChange({ ...filters, type: t });
   const setFrom = (from: string) => onChange({ ...filters, from: from || undefined });
@@ -34,12 +36,30 @@ export function FiltersBar(props: {
 
   const sliderMin = 0;
   const sliderMax = Math.max(1000, Math.ceil(props.amountMax || 0));
-  const sliderStep = 50;
 
-  const sliderValue: [number, number] = [
+  // Log slider: we map slider position -> amount using exp/log.
+  // This makes the low end much easier to fine-tune even when max is huge.
+  const LOG_STEPS = 1000;
+  const logDen = Math.log(Math.max(2, sliderMax));
+  const amountToPos = (amount: number) => {
+    if (!Number.isFinite(amount) || amount <= 0) return 0;
+    const p = Math.log(Math.min(sliderMax, amount)) / logDen; // 0..1
+    return Math.max(0, Math.min(LOG_STEPS, Math.round(p * LOG_STEPS)));
+  };
+  const posToAmount = (pos: number) => {
+    const p = Math.max(0, Math.min(LOG_STEPS, pos)) / LOG_STEPS; // 0..1
+    if (p <= 0) return 0;
+    const a = Math.exp(p * logDen);
+    // Keep it integer-ish for UX; still plenty precise given log mapping.
+    return Math.min(sliderMax, Math.max(0, Math.round(a)));
+  };
+
+  const amountRange: [number, number] = [
     Math.max(sliderMin, Math.min(filters.minAmount, filters.maxAmount)),
     Math.min(sliderMax, Math.max(filters.minAmount, filters.maxAmount)),
   ];
+
+  const sliderPos: [number, number] = [amountToPos(amountRange[0]), amountToPos(amountRange[1])];
 
   const toggleIncludeCategory = (c: string) => {
     onChange({
@@ -195,24 +215,53 @@ export function FiltersBar(props: {
 
         <div className="flex flex-col gap-2">
           <div className="flex items-center justify-between">
-            <div className="text-sm text-muted-foreground">Сумма покупки (мин/макс)</div>
+            <div className="flex items-center gap-3">
+              <div className="text-sm text-muted-foreground">Сумма покупки (мин/макс)</div>
+              <label className="flex items-center gap-2 text-xs text-muted-foreground">
+                <Checkbox checked={logScale} onCheckedChange={(v) => setLogScale(v === true)} />
+                Логарифмически
+              </label>
+            </div>
             <div className="text-xs text-muted-foreground">
-              {sliderValue[0].toLocaleString("ru-RU")} – {sliderValue[1].toLocaleString("ru-RU")}
+              {amountRange[0].toLocaleString("ru-RU")} – {amountRange[1].toLocaleString("ru-RU")}
             </div>
           </div>
-          <Slider
-            value={sliderValue}
-            min={sliderMin}
-            max={sliderMax}
-            step={sliderStep}
-            onValueChange={([minAmount, maxAmount]) =>
-              onChange({
-                ...filters,
-                minAmount,
-                maxAmount,
-              })
-            }
-          />
+          {logScale ? (
+            <>
+              <Slider
+                value={sliderPos}
+                min={0}
+                max={LOG_STEPS}
+                step={1}
+                onValueChange={([minPos, maxPos]) => {
+                  const minAmount = posToAmount(minPos);
+                  const maxAmount = posToAmount(maxPos);
+                  onChange({
+                    ...filters,
+                    minAmount: Math.min(minAmount, maxAmount),
+                    maxAmount: Math.max(minAmount, maxAmount),
+                  });
+                }}
+              />
+              <div className="text-xs text-muted-foreground">
+                Шкала логарифмическая — мелкие суммы настраиваются точнее.
+              </div>
+            </>
+          ) : (
+            <Slider
+              value={amountRange}
+              min={sliderMin}
+              max={sliderMax}
+              step={50}
+              onValueChange={([minAmount, maxAmount]) =>
+                onChange({
+                  ...filters,
+                  minAmount: Math.min(minAmount, maxAmount),
+                  maxAmount: Math.max(minAmount, maxAmount),
+                })
+              }
+            />
+          )}
         </div>
       </div>
     </Card>

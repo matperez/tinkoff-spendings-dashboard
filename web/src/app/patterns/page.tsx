@@ -6,6 +6,7 @@ import { FiltersBar } from "@/components/dashboard/FiltersBar";
 import { Kpis } from "@/components/dashboard/Kpis";
 import { PatternsCharts } from "@/components/dashboard/PatternsCharts";
 import { TopNav } from "@/components/dashboard/TopNav";
+import { Checkbox } from "@/components/ui/checkbox";
 
 import type {
   CategoriesResponse,
@@ -32,6 +33,7 @@ function toSearchParams(filters: DashboardFilters, opts?: { includeCategories?: 
 
 export default function PatternsPage() {
   const [amountMax, setAmountMax] = React.useState<number>(50_000);
+  const [perDay, setPerDay] = React.useState(false);
   const [filters, setFilters] = React.useState<DashboardFilters>({
     from: undefined,
     to: undefined,
@@ -54,6 +56,11 @@ export default function PatternsPage() {
     () => toSearchParams(filters, { includeCategories: false }),
     [filters]
   );
+  const patternsParams = React.useMemo(() => {
+    const sp = new URLSearchParams(params);
+    if (perDay) sp.set("perDay", "1");
+    return sp;
+  }, [params, perDay]);
 
   React.useEffect(() => {
     let cancelled = false;
@@ -63,7 +70,7 @@ export default function PatternsPage() {
         const [summaryRes, catsRes, patternsRes] = await Promise.all([
           fetch(`/api/summary?${params.toString()}`),
           fetch(`/api/categories?${catsParams.toString()}`),
-          fetch(`/api/patterns?${params.toString()}`),
+          fetch(`/api/patterns?${patternsParams.toString()}`),
         ]);
 
         if (cancelled) return;
@@ -86,7 +93,7 @@ export default function PatternsPage() {
     return () => {
       cancelled = true;
     };
-  }, [params.toString(), catsParams.toString()]);
+  }, [params.toString(), catsParams.toString(), patternsParams.toString()]);
 
   const allCategories = React.useMemo(() => {
     const names = (cats?.categories ?? []).map((c) => c.name).filter(Boolean);
@@ -104,7 +111,13 @@ export default function PatternsPage() {
             Группировки: дни недели • месяцы (с учётом текущих фильтров)
           </div>
         </div>
-        <div className="text-xs text-muted-foreground">{loading ? "Обновление…" : ""}</div>
+        <div className="flex items-center gap-4">
+          <label className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Checkbox checked={perDay} onCheckedChange={(v) => setPerDay(v === true)} />
+            Нормировать на день
+          </label>
+          <div className="text-xs text-muted-foreground">{loading ? "Обновление…" : ""}</div>
+        </div>
       </div>
 
       <FiltersBar

@@ -44,5 +44,6 @@ export type PatternsResponse = {
   byWeekday: Array<{ dow: number; income: number; expense: number; net: number; count: number }>;
   byMonth: Array<{ ym: string; income: number; expense: number; net: number; count: number }>;
   byHour: Array<{ hour: number; income: number; expense: number; net: number; count: number }>;
+  meta?: { normalizedPerDay: boolean };
 };
 

@@ -30,6 +30,22 @@ export function FiltersBar(props: {
     onChange({ ...filters, currency: currency || undefined });
   const setQ = (q: string) => onChange({ ...filters, q: q || undefined });
 
+  const toggleIncludeCategory = (c: string) => {
+    onChange({
+      ...filters,
+      categories: toggleArrayValue(filters.categories, c),
+      excludeCategories: filters.excludeCategories.filter((x) => x !== c),
+    });
+  };
+
+  const toggleExcludeCategory = (c: string) => {
+    onChange({
+      ...filters,
+      excludeCategories: toggleArrayValue(filters.excludeCategories, c),
+      categories: filters.categories.filter((x) => x !== c),
+    });
+  };
+
   return (
     <Card className="p-3">
       <div className="flex flex-col gap-3">
@@ -94,29 +110,30 @@ export function FiltersBar(props: {
 
         <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
           <div className="text-sm text-muted-foreground">
-            Категории (клик — добавить/убрать):
+            Категории (клик — добавить, ⌘+клик — исключить):
           </div>
           <div className="flex flex-wrap gap-2">
             {(categoriesExpanded ? props.allCategories : props.allCategories.slice(0, 30)).map((c) => {
-              const active = filters.categories.includes(c);
+              const included = filters.categories.includes(c);
+              const excluded = filters.excludeCategories.includes(c);
               return (
                 <button
                   key={c}
                   type="button"
-                  onClick={() =>
-                    onChange({
-                      ...filters,
-                      categories: toggleArrayValue(filters.categories, c),
-                    })
-                  }
+                  onClick={(e) => {
+                    if (e.metaKey) toggleExcludeCategory(c);
+                    else toggleIncludeCategory(c);
+                  }}
                   className="text-left"
                 >
                   <Badge
-                    variant={active ? "default" : "secondary"}
+                    variant={included ? "default" : excluded ? "outline" : "secondary"}
                     className={
-                      active
+                      included
                         ? "bg-blue-600 text-white hover:bg-blue-600/90 dark:bg-blue-500 dark:hover:bg-blue-500/90"
-                        : undefined
+                        : excluded
+                          ? "border-red-500 text-red-700 line-through dark:text-red-300"
+                          : undefined
                     }
                   >
                     {c}
@@ -154,6 +171,7 @@ export function FiltersBar(props: {
                   currency: undefined,
                   q: undefined,
                   categories: [],
+                  excludeCategories: [],
                 })
               }
             >

@@ -7,6 +7,7 @@ export type DashboardFilters = {
   currency?: string;
   q?: string;
   categories: string[];
+  excludeCategories: string[];
 };
 
 export type SummaryResponse = {
@@ -34,5 +35,11 @@ export type TransactionsResponse = {
     status: string | null;
     card: string | null;
   }>;
+};
+
+export type PatternsResponse = {
+  byWeekday: Array<{ dow: number; income: number; expense: number; net: number; count: number }>;
+  byMonth: Array<{ ym: string; income: number; expense: number; net: number; count: number }>;
+  byHour: Array<{ hour: number; income: number; expense: number; net: number; count: number }>;
 };
 

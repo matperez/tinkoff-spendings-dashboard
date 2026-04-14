@@ -5,6 +5,7 @@ export type Filters = {
   to?: string; // YYYY-MM-DD
   type?: OpType;
   categories?: string[];
+  excludeCategories?: string[];
   currency?: string;
   q?: string;
 };
@@ -14,6 +15,7 @@ export function normalizeFilters(u: URL): Filters {
   const to = u.searchParams.get("to") ?? undefined;
   const type = (u.searchParams.get("type") ?? "all") as OpType;
   const categories = u.searchParams.getAll("category").filter(Boolean);
+  const excludeCategories = u.searchParams.getAll("excludeCategory").filter(Boolean);
   const currency = u.searchParams.get("currency") ?? undefined;
   const q = u.searchParams.get("q") ?? undefined;
 
@@ -22,6 +24,7 @@ export function normalizeFilters(u: URL): Filters {
     to,
     type: type === "expense" || type === "income" ? type : "all",
     categories: categories.length ? categories : undefined,
+    excludeCategories: excludeCategories.length ? excludeCategories : undefined,
     currency: currency || undefined,
     q: q?.trim() ? q.trim() : undefined,
   };
@@ -48,6 +51,12 @@ export function buildWhere(f: Filters) {
     const inParams = f.categories.map((_, i) => `@cat${i}`);
     clauses.push(`COALESCE(category,'') IN (${inParams.join(",")})`);
     f.categories.forEach((c, i) => (params[`cat${i}`] = c));
+  }
+
+  if (f.excludeCategories?.length) {
+    const notInParams = f.excludeCategories.map((_, i) => `@xcat${i}`);
+    clauses.push(`COALESCE(category,'') NOT IN (${notInParams.join(",")})`);
+    f.excludeCategories.forEach((c, i) => (params[`xcat${i}`] = c));
   }
 
   if (f.currency) {

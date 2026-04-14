@@ -7,12 +7,17 @@ export default function Home() {
           Локальный дашборд по `spendings.sqlite`
         </div>
       </div>
-      <a
-        className="rounded-md bg-primary px-4 py-2 text-primary-foreground"
-        href="/dashboard"
-      >
-        Открыть дашборд
-      </a>
+      <div className="flex gap-2">
+        <a className="rounded-md bg-primary px-4 py-2 text-primary-foreground" href="/dashboard">
+          Дашборд
+        </a>
+        <a
+          className="rounded-md bg-secondary px-4 py-2 text-secondary-foreground"
+          href="/patterns"
+        >
+          Закономерности
+        </a>
+      </div>
     </div>
   );
 }

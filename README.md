@@ -1,6 +1,6 @@
-# Spendings (SQLite)
+# Tinkoff spendings dashboard
 
-Импорт банковских выгрузок (CSV/Excel) в SQLite и быстрый анализ.
+Локальный дашборд для анализа выгрузки расходов и доходов из Тинькофф (CSV/Excel) в SQLite.
 
 ## Setup (venv)
 
@@ -25,6 +25,44 @@ python scripts/import_and_analyze.py
 ```bash
 python scripts/import_and_analyze.py --data-dir export --db data/spendings.sqlite
 ```
+
+## Веб-дашборд (Next.js)
+
+### 1) Установка зависимостей
+
+```bash
+cd web
+npm install
+```
+
+### 2) Путь к SQLite (локально)
+
+Файл `web/.env.local` **не коммитится** (см. `.gitignore`). Создайте его вручную:
+
+```bash
+cd web
+printf "SPENDINGS_DB_PATH=../data/spendings.sqlite\n" > .env.local
+```
+
+Если база лежит в другом месте — укажите абсолютный путь.
+
+### 3) Запуск dev-сервера
+
+```bash
+cd web
+npm run dev
+```
+
+Откройте в браузере:
+
+- `http://localhost:3000/dashboard` (или порт, который напечатает Next.js, если `3000` занят)
+- `http://localhost:3000/patterns`
+
+### Примечания
+
+- Исходные выгрузки кладите в `export/` (CSV/XLSX/XLS).
+- База по умолчанию: `data/spendings.sqlite` (создаётся импортом).
+- Если Next.js выберет другой порт (например `3001`), просто используйте URL из вывода `npm run dev`.
 
 ## Что хранится в базе
 

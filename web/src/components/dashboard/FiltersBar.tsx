@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Slider } from "@/components/ui/slider";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import type { DashboardFilters, OpType } from "./types";
@@ -19,6 +20,7 @@ export function FiltersBar(props: {
   onChange: (next: DashboardFilters) => void;
   currencies: string[];
   allCategories: string[];
+  amountMax: number;
 }) {
   const { filters, onChange } = props;
   const [categoriesExpanded, setCategoriesExpanded] = React.useState(false);
@@ -29,6 +31,15 @@ export function FiltersBar(props: {
   const setCurrency = (currency: string) =>
     onChange({ ...filters, currency: currency || undefined });
   const setQ = (q: string) => onChange({ ...filters, q: q || undefined });
+
+  const sliderMin = 0;
+  const sliderMax = Math.max(1000, Math.ceil(props.amountMax || 0));
+  const sliderStep = 50;
+
+  const sliderValue: [number, number] = [
+    Math.max(sliderMin, Math.min(filters.minAmount, filters.maxAmount)),
+    Math.min(sliderMax, Math.max(filters.minAmount, filters.maxAmount)),
+  ];
 
   const toggleIncludeCategory = (c: string) => {
     onChange({
@@ -172,12 +183,36 @@ export function FiltersBar(props: {
                   q: undefined,
                   categories: [],
                   excludeCategories: [],
+                  minAmount: sliderMin,
+                  maxAmount: sliderMax,
                 })
               }
             >
               Сбросить
             </Button>
           </div>
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center justify-between">
+            <div className="text-sm text-muted-foreground">Сумма покупки (мин/макс)</div>
+            <div className="text-xs text-muted-foreground">
+              {sliderValue[0].toLocaleString("ru-RU")} – {sliderValue[1].toLocaleString("ru-RU")}
+            </div>
+          </div>
+          <Slider
+            value={sliderValue}
+            min={sliderMin}
+            max={sliderMax}
+            step={sliderStep}
+            onValueChange={([minAmount, maxAmount]) =>
+              onChange({
+                ...filters,
+                minAmount,
+                maxAmount,
+              })
+            }
+          />
         </div>
       </div>
     </Card>

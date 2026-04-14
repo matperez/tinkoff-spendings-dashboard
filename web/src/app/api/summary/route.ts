@@ -10,6 +10,11 @@ export async function GET(req: Request) {
   const f = normalizeFilters(url);
   const db = getDb();
   const { whereSql, params } = buildWhere(f);
+  const { whereSql: whereNoAmtSql, params: paramsNoAmt } = buildWhere({
+    ...f,
+    minAmount: undefined,
+    maxAmount: undefined,
+  });
 
   const totals = db
     .prepare(
@@ -73,6 +78,16 @@ export async function GET(req: Request) {
     .all()
     .map((r: any) => r.currency as string);
 
-  return NextResponse.json({ totals, byMonth, topCategories, currencies });
+  const amountMax = db
+    .prepare(
+      `
+      SELECT COALESCE(MAX(ABS(operation_amount)), 0) AS amountMax
+      FROM operations
+      ${whereNoAmtSql}
+      `
+    )
+    .get(paramsNoAmt) as { amountMax: number };
+
+  return NextResponse.json({ totals, byMonth, topCategories, currencies, amountMax: amountMax.amountMax });
 }
 

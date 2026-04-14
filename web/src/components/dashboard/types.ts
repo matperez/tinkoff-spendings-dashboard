@@ -8,6 +8,8 @@ export type DashboardFilters = {
   q?: string;
   categories: string[];
   excludeCategories: string[];
+  minAmount: number;
+  maxAmount: number;
 };
 
 export type SummaryResponse = {
@@ -15,6 +17,7 @@ export type SummaryResponse = {
   byMonth: Array<{ ym: string; income: number; expense: number; net: number }>;
   topCategories: Array<{ name: string; amount: number }>;
   currencies: string[];
+  amountMax: number;
 };
 
 export type CategoriesResponse = {

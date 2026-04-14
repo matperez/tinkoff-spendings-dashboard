@@ -22,6 +22,8 @@ function toSearchParams(filters: DashboardFilters, opts?: { includeCategories?: 
   sp.set("type", filters.type);
   if (filters.currency) sp.set("currency", filters.currency);
   if (filters.q) sp.set("q", filters.q);
+  if (filters.minAmount > 0) sp.set("minAmount", String(filters.minAmount));
+  if (filters.maxAmount >= 0) sp.set("maxAmount", String(filters.maxAmount));
   if (opts?.includeCategories ?? true) {
     for (const c of filters.categories) sp.append("category", c);
     for (const c of filters.excludeCategories) sp.append("excludeCategory", c);
@@ -30,6 +32,7 @@ function toSearchParams(filters: DashboardFilters, opts?: { includeCategories?: 
 }
 
 export default function DashboardPage() {
+  const [amountMax, setAmountMax] = React.useState<number>(50_000);
   const [filters, setFilters] = React.useState<DashboardFilters>({
     from: undefined,
     to: undefined,
@@ -38,6 +41,8 @@ export default function DashboardPage() {
     q: undefined,
     categories: [],
     excludeCategories: [],
+    minAmount: 0,
+    maxAmount: 50_000,
   });
   const [page, setPage] = React.useState(1);
 
@@ -69,9 +74,19 @@ export default function DashboardPage() {
         ]);
 
         if (cancelled) return;
-        setSummary((await summaryRes.json()) as SummaryResponse);
+        const s = (await summaryRes.json()) as SummaryResponse;
+        setSummary(s);
         setCats((await catsRes.json()) as CategoriesResponse);
         setTx((await txRes.json()) as TransactionsResponse);
+        // Keep slider max in sync with the real DB max; if user didn't customize max,
+        // auto-extend to the new max.
+        setAmountMax((prev) => {
+          const next = Math.max(1000, Math.ceil(s.amountMax || 0));
+          if (filters.maxAmount === prev) {
+            setFilters((f0) => ({ ...f0, maxAmount: next }));
+          }
+          return next;
+        });
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -106,6 +121,7 @@ export default function DashboardPage() {
         onChange={(next) => setFilters(next)}
         currencies={summary?.currencies ?? ["RUB"]}
         allCategories={allCategories}
+        amountMax={amountMax}
       />
 
       <Kpis

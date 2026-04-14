@@ -8,6 +8,8 @@ export type Filters = {
   excludeCategories?: string[];
   currency?: string;
   q?: string;
+  minAmount?: number;
+  maxAmount?: number;
 };
 
 export function normalizeFilters(u: URL): Filters {
@@ -18,6 +20,20 @@ export function normalizeFilters(u: URL): Filters {
   const excludeCategories = u.searchParams.getAll("excludeCategory").filter(Boolean);
   const currency = u.searchParams.get("currency") ?? undefined;
   const q = u.searchParams.get("q") ?? undefined;
+  const minRaw = u.searchParams.get("minAmount") ?? undefined;
+  const maxRaw = u.searchParams.get("maxAmount") ?? undefined;
+
+  let minAmount: number | undefined;
+  if (minRaw !== undefined) {
+    const n = Number.parseFloat(minRaw);
+    if (Number.isFinite(n) && n >= 0) minAmount = n;
+  }
+
+  let maxAmount: number | undefined;
+  if (maxRaw !== undefined) {
+    const n = Number.parseFloat(maxRaw);
+    if (Number.isFinite(n) && n >= 0) maxAmount = n;
+  }
 
   return {
     from,
@@ -27,6 +43,8 @@ export function normalizeFilters(u: URL): Filters {
     excludeCategories: excludeCategories.length ? excludeCategories : undefined,
     currency: currency || undefined,
     q: q?.trim() ? q.trim() : undefined,
+    minAmount,
+    maxAmount,
   };
 }
 
@@ -67,6 +85,15 @@ export function buildWhere(f: Filters) {
   if (f.q) {
     clauses.push("description LIKE @q");
     params.q = `%${f.q}%`;
+  }
+
+  if (f.minAmount !== undefined) {
+    clauses.push("ABS(operation_amount) >= @minAmount");
+    params.minAmount = f.minAmount;
+  }
+  if (f.maxAmount !== undefined) {
+    clauses.push("ABS(operation_amount) <= @maxAmount");
+    params.maxAmount = f.maxAmount;
   }
 
   return {

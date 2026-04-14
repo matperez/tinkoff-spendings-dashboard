@@ -33,7 +33,7 @@ function toSearchParams(filters: DashboardFilters, opts?: { includeCategories?: 
 
 export default function PatternsPage() {
   const [amountMax, setAmountMax] = React.useState<number>(50_000);
-  const [perDay, setPerDay] = React.useState(false);
+  const [unitNormalized, setUnitNormalized] = React.useState(false);
   const [filters, setFilters] = React.useState<DashboardFilters>({
     from: undefined,
     to: undefined,
@@ -58,9 +58,9 @@ export default function PatternsPage() {
   );
   const patternsParams = React.useMemo(() => {
     const sp = new URLSearchParams(params);
-    if (perDay) sp.set("perDay", "1");
+    if (unitNormalized) sp.set("perDay", "1");
     return sp;
-  }, [params, perDay]);
+  }, [params, unitNormalized]);
 
   React.useEffect(() => {
     let cancelled = false;
@@ -113,8 +113,8 @@ export default function PatternsPage() {
         </div>
         <div className="flex items-center gap-4">
           <label className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Checkbox checked={perDay} onCheckedChange={(v) => setPerDay(v === true)} />
-            Нормировать на день
+            <Checkbox checked={unitNormalized} onCheckedChange={(v) => setUnitNormalized(v === true)} />
+            Удельные траты
           </label>
           <div className="text-xs text-muted-foreground">{loading ? "Обновление…" : ""}</div>
         </div>
